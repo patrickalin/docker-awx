@@ -1,0 +1,115 @@
+version: '3'
+services:
+  postgres:
+    image: "registry.services.alin.be/postgres:9.6.8-alpine"
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.6"
+          memory: 100M
+      restart_policy:
+        condition: on-failure
+    environment:
+      POSTGRES_USER: awx
+      POSTGRES_PASSWORD: awxpass
+      POSTGRES_DB: awx
+    volumes:
+      - ./postgres:/var/lib/postgresql/data
+
+  rabbitmq:
+    image: "registry.services.alin.be/rabbitmq:3"
+    environment:
+      RABBITMQ_DEFAULT_VHOST: awx
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "1"
+          memory: 400M
+      restart_policy:
+        condition: on-failure
+
+  memcached:
+    image: "registry.services.alin.be/memcached:1.5.6-alpine"
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.6"
+          memory: 100M
+      restart_policy:
+        condition: on-failure
+
+  awx_web:
+    image: "registry.services.alin.be/ansible/awx_web:1.0.4.70"
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.6"
+          memory: 500M
+      restart_policy:
+        condition: on-failure
+      labels:
+        - traefik.port=8052
+        - traefik.frontend.rule=Host:awx.services.alin.be
+        - traefik.frontend.entryPoints=http,https
+        - traefik.backend.loadbalancer.method=wrr
+    depends_on:
+      - rabbitmq
+      - memcached
+      - postgres
+    hostname: awxweb
+    user: root
+    environment:
+      SECRET_KEY: aabbcc
+      DATABASE_USER: awx
+      DATABASE_PASSWORD: awxpass
+      DATABASE_NAME: awx
+      DATABASE_PORT: 5432
+      DATABASE_HOST: postgres
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_VHOST: awx
+      MEMCACHED_HOST: memcached
+      MEMCACHED_PORT: 11211
+
+  awx_task:
+    image: "registry.services.alin.be/ansible/awx_task:1.0.4.70"
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: "0.6"
+          memory: 100M
+      restart_policy:
+        condition: on-failure
+    depends_on:
+      - rabbitmq
+      - memcached
+      - awx_web:awxweb
+      - postgres
+    hostname: awx
+    user: root
+    environment:
+      SECRET_KEY: aabbcc
+      DATABASE_USER: awx
+      DATABASE_PASSWORD: awxpass
+      DATABASE_NAME: awx
+      DATABASE_PORT: 5432
+      DATABASE_HOST: postgres
+      RABBITMQ_USER: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_VHOST: awx
+      MEMCACHED_HOST: memcached
+      MEMCACHED_PORT: 11211
+
+networks:
+  default:
+    external:
+      name: traefik-net
