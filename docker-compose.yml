@@ -1,13 +1,13 @@
-version: '3'
+version: '3.6'
 services:
-  postgres:
-    image: "registry.services.alin.be/postgres:9.6.8-alpine"
+  awx-postgres:
+    image: "postgres:9.6.9-alpine"
     deploy:
       replicas: 1
       resources:
         limits:
-          cpus: "0.6"
-          memory: 100M
+          cpus: "1"
+          memory: 200M
       restart_policy:
         condition: on-failure
     environment:
@@ -18,7 +18,7 @@ services:
       - ./postgres:/var/lib/postgresql/data
 
   rabbitmq:
-    image: "registry.services.alin.be/rabbitmq:3"
+    image: "rabbitmq:3.7-alpine"
     environment:
       RABBITMQ_DEFAULT_VHOST: awx
     deploy:
@@ -31,24 +31,24 @@ services:
         condition: on-failure
 
   memcached:
-    image: "registry.services.alin.be/memcached:1.5.6-alpine"
+    image: "memcached:1.5.6-alpine"
     deploy:
       replicas: 1
       resources:
         limits:
           cpus: "0.6"
-          memory: 100M
+          memory: 200M
       restart_policy:
         condition: on-failure
 
   awx_web:
-    image: "registry.services.alin.be/ansible/awx_web:1.0.4.70"
+    image: "ansible/awx_web:1.0.6.5"
     deploy:
       replicas: 1
       resources:
         limits:
           cpus: "0.6"
-          memory: 500M
+          memory: 750M
       restart_policy:
         condition: on-failure
       labels:
@@ -78,13 +78,13 @@ services:
       MEMCACHED_PORT: 11211
 
   awx_task:
-    image: "registry.services.alin.be/ansible/awx_task:1.0.4.70"
+    image: "ansible/awx_task:1.0.6.5"
     deploy:
       replicas: 1
       resources:
         limits:
           cpus: "0.6"
-          memory: 100M
+          memory: 200M
       restart_policy:
         condition: on-failure
     depends_on:
