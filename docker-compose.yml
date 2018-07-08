@@ -6,7 +6,7 @@ services:
       replicas: 1
       resources:
         limits:
-          cpus: "1"
+          cpus: "0.2"
           memory: 200M
       restart_policy:
         condition: on-failure
@@ -18,14 +18,14 @@ services:
       - ./postgres:/var/lib/postgresql/data
 
   rabbitmq:
-    image: "rabbitmq:3.7-alpine"
+    image: registry.services.alin.be/homeassistant-alin:v1
     environment:
       RABBITMQ_DEFAULT_VHOST: awx
     deploy:
       replicas: 1
       resources:
         limits:
-          cpus: "1"
+          cpus: "0.5"
           memory: 400M
       restart_policy:
         condition: on-failure
